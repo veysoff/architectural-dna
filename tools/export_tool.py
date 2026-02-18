@@ -8,6 +8,7 @@ from export_utils import sanitize_export_path
 from exporters import ExporterFactory, ExportResult
 
 from .base import BaseTool
+from .pattern_tool import PatternTool
 
 
 class ExportTool(BaseTool):
@@ -25,7 +26,7 @@ class ExportTool(BaseTool):
     def export_patterns(
         self,
         output_path: str,
-        format: str = "json",
+        export_format: str = "json",
         language: str | None = None,
         category: str | None = None,
         min_quality: int = 5,
@@ -125,7 +126,7 @@ class ExportTool(BaseTool):
                     break
 
             # 3. Export using factory
-            exporter = ExporterFactory.get_exporter(format)
+            exporter = ExporterFactory.get_exporter(export_format)
             result = exporter.export(patterns, output_path, **export_options)
 
             return result
@@ -146,7 +147,7 @@ class ExportTool(BaseTool):
         self,
         query: str,
         output_path: str,
-        format: str = "json",
+        export_format: str = "json",
         limit: int = 10,
         **export_options,
     ) -> ExportResult:
@@ -185,13 +186,11 @@ class ExportTool(BaseTool):
 
         try:
             # Use existing search logic
-            from .pattern_tool import PatternTool
-
             pattern_tool = PatternTool(self.client, self.collection_name, self.config)
             results = pattern_tool.search_dna(query=query, limit=limit)
 
             # Export results
-            exporter = ExporterFactory.get_exporter(format)
+            exporter = ExporterFactory.get_exporter(export_format)
             result = exporter.export(results, output_path, **export_options)
 
             return result

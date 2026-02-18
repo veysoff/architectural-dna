@@ -11,6 +11,7 @@ Key utilities:
 """
 
 import os
+import tempfile
 import time
 from collections.abc import Callable
 from contextlib import suppress
@@ -72,7 +73,8 @@ def sanitize_export_path(
         return False, None, "Output path cannot be empty"
 
     # Reject paths with traversal sequences (always dangerous)
-    if ".." in output_path:
+    # Use Path.parts to check normalized components, not raw string substring
+    if ".." in Path(output_path).parts:
         return (
             False,
             None,
@@ -171,20 +173,20 @@ def atomic_file_write(
             output_file.parent.mkdir(parents=True, exist_ok=True)
 
         # Test writability before attempting write
-        test_file = output_file.with_suffix(".tmp_test")
-        try:
-            test_file.touch()
-            test_file.unlink()
-        except PermissionError as e:
+        if not os.access(output_file.parent, os.W_OK):
             duration = time.time() - start_time
             return WriteResult(
                 success=False,
                 duration_seconds=duration,
-                error=f"Cannot write to {output_path}: {e}",
+                error=f"Cannot write to {output_path}: permission denied",
             )
 
         # Write to temp file first (atomic operation)
-        temp_file = output_file.with_suffix(".tmp")
+        # Use NamedTemporaryFile with random suffix to prevent collision under concurrent writes
+        with tempfile.NamedTemporaryFile(
+            dir=output_file.parent, delete=False, suffix=".tmp"
+        ) as tf:
+            temp_file = Path(tf.name)
         write_func(temp_file)
 
         # Atomic rename (POSIX: atomic, Windows: nearly atomic)

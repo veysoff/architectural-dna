@@ -96,6 +96,11 @@ class JsonExporter(BaseExporter):
                         duration_seconds=duration,
                     )
 
+            # Count records: list → length, single item → 1
+            records_count = (
+                len(serialized_items) if isinstance(serialized_items, list) else 1
+            )
+
             # 3. Prepare output structure
             if include_metadata:
                 output_data = {
@@ -135,7 +140,7 @@ class JsonExporter(BaseExporter):
             return ExportResult(
                 success=len(errors) == 0,
                 output_path=str(output_file),
-                records_exported=len(serialized_items),
+                records_exported=records_count,
                 records_failed=len(errors),
                 errors=errors,
                 warnings=warnings,
@@ -192,8 +197,8 @@ class JsonExporter(BaseExporter):
         elif isinstance(obj, (list, tuple)):
             return [self._serialize(item) for item in obj]
         elif isinstance(obj, set):
-            # Sort sets for deterministic output (critical for testing)
-            return sorted([self._serialize(item) for item in obj])
+            # Sort sets for deterministic output; key=str handles heterogeneous types
+            return sorted([self._serialize(item) for item in obj], key=str)
 
         # Primitives and special types
         elif isinstance(obj, (str, int, float, bool, type(None))):
@@ -220,7 +225,7 @@ class JsonExporter(BaseExporter):
         elif isinstance(obj, datetime):
             return obj.isoformat()
         elif isinstance(obj, set):
-            return sorted(obj)
+            return sorted((self._serialize(item) for item in obj), key=str)
         elif isinstance(obj, Path):
             return str(obj)
         raise TypeError(f"Object of type {type(obj).__name__} is not JSON serializable")

@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import importlib
 import logging
+import threading
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import TYPE_CHECKING
@@ -73,6 +74,7 @@ class LanguageRegistry:
         self._languages: dict = {}  # Cache for language objects
         self._configs: dict = {}  # Cache for language configs
         self._initialized: set = set()  # Track initialization attempts
+        self._lock = threading.Lock()  # Guard lazy-load critical section
 
         # Check tree-sitter availability globally
         self._tree_sitter_available = self._check_tree_sitter()
@@ -258,12 +260,17 @@ class LanguageRegistry:
         Returns:
             Parser instance or None if unavailable (or failed to initialize)
         """
-        # Return cached parser (or cached None if initialization failed)
+        # Fast path: return cached result without lock (safe after initialization)
         if language in self._initialized:
             return self._parsers.get(language)
 
-        # Mark as initialized (even if fails, don't retry to avoid repeated errors)
-        self._initialized.add(language)
+        # Slow path: acquire lock and double-check to prevent concurrent initialization
+        with self._lock:
+            if language in self._initialized:
+                return self._parsers.get(language)
+
+            # Mark as initialized (even if fails, don't retry to avoid repeated errors)
+            self._initialized.add(language)
 
         # Check if tree-sitter available
         if not self._tree_sitter_available:

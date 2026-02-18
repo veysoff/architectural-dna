@@ -650,7 +650,7 @@ def export_dna(
 
         result = export_tool.export_patterns(
             output_path=output_path,
-            format=format,
+            export_format=format,
             language=language,
             category=category,
             min_quality=min_quality,

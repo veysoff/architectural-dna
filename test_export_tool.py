@@ -26,7 +26,7 @@ def mock_qdrant_client():
         "content": "def foo(): pass",
         "quality_score": 8,
         "source_repo": "test/repo1",
-        "source_path": "foo.py"
+        "source_path": "foo.py",
     }
     point1.vector = None
 
@@ -40,7 +40,7 @@ def mock_qdrant_client():
         "content": "public class Test {}",
         "quality_score": 7,
         "source_repo": "test/repo2",
-        "source_path": "Test.java"
+        "source_path": "Test.java",
     }
     point2.vector = None
 
@@ -60,6 +60,7 @@ def export_tool(mock_qdrant_client):
 # ExportTool Integration Tests
 # ============================================================================
 
+
 class TestExportToolIntegration:
     """Integration tests for ExportTool with mock Qdrant."""
 
@@ -68,9 +69,7 @@ class TestExportToolIntegration:
         output_file = tmp_path / "patterns.json"
 
         result = export_tool.export_patterns(
-            output_path=str(output_file),
-            format="json",
-            limit=10
+            output_path=str(output_file), export_format="json", limit=10
         )
 
         assert isinstance(result, ExportResult)
@@ -91,9 +90,7 @@ class TestExportToolIntegration:
         output_file = tmp_path / "patterns.csv"
 
         result = export_tool.export_patterns(
-            output_path=str(output_file),
-            format="csv",
-            limit=10
+            output_path=str(output_file), export_format="csv", limit=10
         )
 
         assert result.success
@@ -102,6 +99,7 @@ class TestExportToolIntegration:
 
         # Verify CSV is readable
         import csv
+
         with open(output_file, encoding="utf-8-sig") as f:
             reader = csv.DictReader(f)
             rows = list(reader)
@@ -113,9 +111,7 @@ class TestExportToolIntegration:
         output_file = tmp_path / "patterns.md"
 
         result = export_tool.export_patterns(
-            output_path=str(output_file),
-            format="md",
-            limit=10
+            output_path=str(output_file), export_format="md", limit=10
         )
 
         assert result.success
@@ -134,9 +130,9 @@ class TestExportToolIntegration:
 
         result = export_tool.export_patterns(
             output_path=str(output_file),
-            format="json",
+            export_format="json",
             language="python",
-            limit=10
+            limit=10,
         )
 
         assert result.success
@@ -150,10 +146,7 @@ class TestExportToolIntegration:
         output_file = tmp_path / "high_quality_patterns.json"
 
         result = export_tool.export_patterns(
-            output_path=str(output_file),
-            format="json",
-            min_quality=7,
-            limit=10
+            output_path=str(output_file), export_format="json", min_quality=7, limit=10
         )
 
         assert result.success
@@ -166,11 +159,11 @@ class TestExportToolIntegration:
 
         result = export_tool.export_patterns(
             output_path=str(output_file),
-            format="json",
+            export_format="json",
             language="python",
             category="utilities",
             min_quality=7,
-            limit=10
+            limit=10,
         )
 
         assert result.success
@@ -181,8 +174,7 @@ class TestExportToolIntegration:
     def test_export_unsupported_format_raises_error(self, export_tool, tmp_path):
         """Test that unsupported format is handled gracefully."""
         result = export_tool.export_patterns(
-            output_path=str(tmp_path / "test.xyz"),
-            format="xyz"
+            output_path=str(tmp_path / "test.xyz"), export_format="xyz"
         )
 
         # Should handle error gracefully and return failed result
@@ -195,8 +187,7 @@ class TestExportToolIntegration:
         output_file = tmp_path / "patterns.json"
 
         result = export_tool.export_patterns(
-            output_path=str(output_file),
-            format="json"
+            output_path=str(output_file), export_format="json"
         )
 
         # Check all ExportResult fields are populated
@@ -219,6 +210,7 @@ class TestExportToolIntegration:
 
     def test_export_pagination(self, export_tool, tmp_path):
         """Test that ExportTool handles pagination correctly."""
+
         # Set up mock to return multiple batches
         def mock_scroll(*args, **kwargs):
             offset = kwargs.get("offset")
@@ -226,14 +218,22 @@ class TestExportToolIntegration:
                 # First call
                 point = MagicMock()
                 point.id = "1"
-                point.payload = {"title": "Pattern 1", "language": "python", "category": "utilities"}
+                point.payload = {
+                    "title": "Pattern 1",
+                    "language": "python",
+                    "category": "utilities",
+                }
                 point.vector = None
                 return ([point], "cursor_1")  # Return cursor for next page
             elif offset == "cursor_1":
                 # Second call
                 point = MagicMock()
                 point.id = "2"
-                point.payload = {"title": "Pattern 2", "language": "java", "category": "testing"}
+                point.payload = {
+                    "title": "Pattern 2",
+                    "language": "java",
+                    "category": "testing",
+                }
                 point.vector = None
                 return ([point], None)  # No more pages
             return ([], None)
@@ -243,9 +243,7 @@ class TestExportToolIntegration:
         output_file = tmp_path / "paginated.json"
 
         export_tool.export_patterns(
-            output_path=str(output_file),
-            format="json",
-            limit=100
+            output_path=str(output_file), export_format="json", limit=100
         )
 
         # Should have called scroll twice (once for each page)
@@ -256,9 +254,7 @@ class TestExportToolIntegration:
         output_file = tmp_path / "with_metadata.json"
 
         result = export_tool.export_patterns(
-            output_path=str(output_file),
-            format="json",
-            include_metadata=True
+            output_path=str(output_file), export_format="json", include_metadata=True
         )
 
         assert result.success
@@ -275,16 +271,18 @@ class TestExportToolIntegration:
         # Re-mock client for this test
         point = MagicMock()
         point.id = "1"
-        point.payload = {"title": "Pattern", "language": "python", "category": "utilities"}
+        point.payload = {
+            "title": "Pattern",
+            "language": "python",
+            "category": "utilities",
+        }
         point.vector = None
         export_tool.client.scroll.return_value = ([point], None)
 
         output_file = tmp_path / "no_metadata.json"
 
         result = export_tool.export_patterns(
-            output_path=str(output_file),
-            format="json",
-            include_metadata=False
+            output_path=str(output_file), export_format="json", include_metadata=False
         )
 
         assert result.success
@@ -304,8 +302,7 @@ class TestExportToolIntegration:
         output_file = tmp_path / "error_test.json"
 
         result = export_tool.export_patterns(
-            output_path=str(output_file),
-            format="json"
+            output_path=str(output_file), export_format="json"
         )
 
         # Should handle error gracefully
@@ -335,7 +332,11 @@ class TestExportToolQdrantScrolling:
                 assert offset is None
                 point = MagicMock()
                 point.id = "1"
-                point.payload = {"title": "P1", "language": "python", "category": "utilities"}
+                point.payload = {
+                    "title": "P1",
+                    "language": "python",
+                    "category": "utilities",
+                }
                 point.vector = None
                 return ([point], "cursor_abc")
             elif call_count == 2:
@@ -343,7 +344,11 @@ class TestExportToolQdrantScrolling:
                 assert offset == "cursor_abc"
                 point = MagicMock()
                 point.id = "2"
-                point.payload = {"title": "P2", "language": "java", "category": "testing"}
+                point.payload = {
+                    "title": "P2",
+                    "language": "java",
+                    "category": "testing",
+                }
                 point.vector = None
                 return ([point], None)
             return ([], None)
@@ -351,9 +356,7 @@ class TestExportToolQdrantScrolling:
         export_tool.client.scroll.side_effect = mock_scroll
 
         result = export_tool.export_patterns(
-            output_path="/tmp/test.json",
-            format="json",
-            limit=100
+            output_path="/tmp/test.json", export_format="json", limit=100
         )
 
         assert result.success
@@ -367,19 +370,19 @@ class TestPathTraversalSecurity:
     def test_path_traversal_with_double_dot_rejected(self, export_tool, tmp_path):
         """Test that path traversal with .. is rejected."""
         result = export_tool.export_patterns(
-            output_path="../../../etc/passwd",
-            format="json"
+            output_path="../../../etc/passwd", export_format="json"
         )
 
         assert result.success is False
         assert len(result.errors) > 0
-        assert "cannot contain" in str(result.errors[0]).lower() or ".." in str(result.errors[0])
+        assert "cannot contain" in str(result.errors[0]).lower() or ".." in str(
+            result.errors[0]
+        )
 
     def test_path_with_null_byte_rejected(self, export_tool):
         """Test that paths with null bytes are rejected."""
         result = export_tool.export_patterns(
-            output_path="test\0malicious.json",
-            format="json"
+            output_path="test\0malicious.json", export_format="json"
         )
 
         assert result.success is False
@@ -389,12 +392,12 @@ class TestPathTraversalSecurity:
         """Test that relative paths without traversal are allowed."""
         # Change to tmp_path so relative paths work
         import os
+
         old_cwd = os.getcwd()
         try:
             os.chdir(tmp_path)
             result = export_tool.export_patterns(
-                output_path="safe_export.json",
-                format="json"
+                output_path="safe_export.json", export_format="json"
             )
             # Should succeed or at least not fail for path security reasons
             if result.success is False:

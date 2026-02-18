@@ -529,6 +529,31 @@ class CSharpSemanticAnalyzer:
                     state = "BLOCK_COMMENT"
                     i += 2
                     continue
+                elif char == "$" and next_char == '"':
+                    # Interpolated string $"..." — treat as regular string
+                    state = "STRING"
+                    i += 2
+                    continue
+                elif (
+                    char == "$"
+                    and next_char == "@"
+                    and i + 2 < length
+                    and content[i + 2] == '"'
+                ):
+                    # Interpolated verbatim string $@"..."
+                    state = "VERBATIM_STRING"
+                    i += 3
+                    continue
+                elif (
+                    char == "@"
+                    and next_char == "$"
+                    and i + 2 < length
+                    and content[i + 2] == '"'
+                ):
+                    # Interpolated verbatim string @$"..."
+                    state = "VERBATIM_STRING"
+                    i += 3
+                    continue
                 elif char == "@" and next_char == '"':
                     state = "VERBATIM_STRING"
                     i += 2

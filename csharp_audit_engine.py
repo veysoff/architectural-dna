@@ -277,8 +277,10 @@ class CSharpAuditEngine:
         rule = self.rules["DATA_001"]
 
         for type_name, type_info in self.analyzer.types.items():
+            namespace = type_info.namespace or ""
+            file_path = type_info.file_path or ""
             in_forbidden_layer = any(
-                layer in type_info.namespace or layer in type_info.file_path
+                layer in namespace or layer in file_path
                 for layer in rule.configuration["forbidden_layers"]
             )
 
@@ -347,10 +349,12 @@ class CSharpAuditEngine:
             rec_stack.remove(node)
             return None
 
-        visited: set[str] = set()
+        all_visited: set[str] = set()
         for namespace in namespace_deps:
-            if namespace not in visited:
-                cycle = find_cycle(namespace, visited, set(), [])
+            if namespace not in all_visited:
+                component_visited: set[str] = set()
+                cycle = find_cycle(namespace, component_visited, set(), [])
+                all_visited |= component_visited
                 if cycle:
                     violations.append(
                         ArchitecturalViolation(
@@ -439,8 +443,9 @@ class CSharpAuditEngine:
         for type_name, type_info in self.analyzer.types.items():
             # Determine source layer
             source_layer = None
+            type_namespace = type_info.namespace or ""
             for layer in layer_hierarchy:
-                if layer in type_info.namespace:
+                if layer in type_namespace:
                     source_layer = layer
                     break
 
@@ -457,8 +462,9 @@ class CSharpAuditEngine:
 
                 # Determine dependency layer
                 dep_layer = None
+                dep_namespace = dep_type.namespace or ""
                 for layer in layer_hierarchy:
-                    if layer in dep_type.namespace:
+                    if layer in dep_namespace:
                         dep_layer = layer
                         break
 
@@ -569,8 +575,6 @@ class CSharpAuditEngine:
 
                 all_violations.extend(result)
 
-            except ArchitecturalViolation:
-                raise  # Don't catch our own exception types
             except (RecursionError, MemoryError) as resource_error:
                 logger.error(
                     f"CRITICAL: Resource exhaustion in {method_name}: {resource_error}",
