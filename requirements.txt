@@ -9,8 +9,7 @@ fastembed>=0.5.0
 PyGithub>=2.8.0
 
 # Code Parsing (AST)
-# Note: tree-sitter dependencies are declared but not yet used in pattern extraction
-# TODO: Migrate all languages from regex to tree-sitter AST parsing or maybe need to delete ?:) (need to understand in future)
+# C# uses tree-sitter AST extraction. Python, Java, JS/TS use tree-sitter with regex fallback. Go uses pseudo-AST.
 tree-sitter>=0.25.0
 tree-sitter-python>=0.25.0
 tree-sitter-java>=0.23.0
