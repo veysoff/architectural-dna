@@ -11,7 +11,7 @@ import logging
 import re
 from collections import defaultdict
 from dataclasses import dataclass, field
-from enum import Enum
+from enum import StrEnum
 from pathlib import Path
 
 import yaml
@@ -23,7 +23,7 @@ from csharp_pattern_detector import CSharpPatternDetector
 logger = logging.getLogger(__name__)
 
 
-class ArchitecturalRole(str, Enum):
+class ArchitecturalRole(StrEnum):
     """Architectural roles derived from attributes and patterns."""
 
     CONTROLLER = "controller"

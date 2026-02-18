@@ -2,7 +2,7 @@
 
 import hashlib
 from dataclasses import dataclass, field
-from enum import Enum
+from enum import StrEnum
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -30,7 +30,7 @@ def generate_pattern_id(repo_name: str, file_path: str, content: str) -> str:
     return hashlib.md5(unique_str.encode()).hexdigest()
 
 
-class PatternCategory(str, Enum):
+class PatternCategory(StrEnum):
     """Categories for code patterns."""
 
     ARCHITECTURE = "architecture"
@@ -45,7 +45,7 @@ class PatternCategory(str, Enum):
     OTHER = "other"
 
 
-class Language(str, Enum):
+class Language(StrEnum):
     """Supported programming languages."""
 
     PYTHON = "python"

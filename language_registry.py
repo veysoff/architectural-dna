@@ -9,7 +9,7 @@ import importlib
 import logging
 import threading
 from dataclasses import dataclass, field
-from enum import Enum
+from enum import StrEnum
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -18,7 +18,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-class ExtractionMethod(str, Enum):
+class ExtractionMethod(StrEnum):
     """Method used for code extraction."""
 
     AST = "ast"  # Tree-sitter AST parsing

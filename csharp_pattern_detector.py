@@ -14,12 +14,12 @@ Detects common C# design patterns like:
 
 import re
 from dataclasses import dataclass
-from enum import Enum
+from enum import StrEnum
 
 from csharp_constants import CSHARP_CONSTANTS
 
 
-class DesignPattern(str, Enum):
+class DesignPattern(StrEnum):
     """Common C# design patterns."""
 
     SINGLETON = "singleton"
